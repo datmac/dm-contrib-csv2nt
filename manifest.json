@@ -1,0 +1,14 @@
+{
+  "output" : "text/nt",
+  "id": "csv2nt",
+  "title": {
+    "fr": "Transforme des données CSV en RDF N-Triples",
+    "en": "Transform CSV data to RDF N-Triples"
+  },
+  "description": {
+    "fr" : "Transformer un tableau CSV en RDF en utilisant le format [N-Triples](https://en.wikipedia.org/wiki/N-Triples)",
+    "en" : "Transform a CSV table to RDF with the [N-Triples](https://en.wikipedia.org/wiki/N-Triples) format"
+  },
+  "parameters" : {
+  }
+}
