@@ -22,53 +22,59 @@ function Command(options)
 Command.prototype = Object.create(
   Transform.prototype, { constructor: { value: Command }});
 
+Command.prototype.parse = function (rows) {
+  var self = this;
+
+  rows.forEach(function (row) {
+      if (self.counter === 0) {
+        self.titles = row.slice(0);
+        for (var i = 0; i < row.length; i++) {
+          var x = NT.stringify('_:' + NT.echap(row[i]), 'title', row[i])
+          if (x) {
+            self.push(x);
+          }
+        }
+      }
+      else {
+        if (row.length > self.titles.length) {
+          // TODO
+        }
+        for (var i = 0; i < row.length; i++) {
+          var x = NT.stringify('_:row' + self.counter, self.titles[i], row[i])
+          if (x) {
+            self.push(x);
+          }
+        }
+      }
+      self.counter++;
+    }
+  );
+}
+
 Command.prototype._transform = function (chunk, encoding, done) {
   var self = this;
 
-  self.buffer += chunk;
-
   if (self.begin) {
     self.begin = false;
-    self.separator = CSV.detect(self.buffer);
+    self.separator = CSV.detect(chunk.toString());
     self.emit('begin');
-  }
 
-  var r, s = 0;
-
-  while (r = CSV.read(self.buffer.slice(s), this.separator, function (row) {
-        if (self.counter === 0) {
-          self.titles = row.slice(0);
-          for (var i = 0; i < row.length; i++) {
-            var x = NT.stringify('_:' + NT.echap(row[i]), 'title', row[i])
-            debug('out', x)
-            if (x) {
-              self.push(x);
-            }
-          }
-        }
-        else {
-          if (row.length > self.titles.length) {
-            // TODO
-          }
-          for (var i = 0; i < row.length; i++) {
-            var x = NT.stringify('_:row' + self.counter, self.titles[i], row[i])
-            if (x) {
-              debug('out', x)
-              self.push(x);
-            }
-          }
-        }
-        self.counter++;
-      }
-    )
-  ) {
-    s += r;
   }
-  self.buffer = self.buffer.slice(s);
+  self.buffer = self.buffer.concat(chunk.toString());
+  var x = CSV.readChunk(self.buffer, self.separator, function (rows) {
+      self.parse(rows);
+    }
+  );
+  done();
+  self.buffer = self.buffer.slice(x);
 }
 Command.prototype.end = function () {
-  var that = this;
-  that.emit('end');
+  var self = this;
+  CSV.readAll(self.buffer, self.separator, function (rows) {
+      self.parse(rows);
+    }
+  );
+  self.emit('end');
 };
 
 module.exports = function (options, si) {
